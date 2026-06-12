@@ -1,15 +1,16 @@
 import streamlit as st
-import pandas as pd
 import time
 
 # ==========================================
-# 0. 페이지 설정 및 폰트/디자인 (서울남산체 & 글자 크기 확대)
+# 0. 페이지 설정 및 폰트/디자인 (서울남산체 & 글자 크기 대폭 확대)
 # ==========================================
 st.set_page_config(page_title="TOS-Master AI", page_icon="🎯", layout="wide")
 
-# CSS를 통한 서울남산체 폰트 적용 및 전체 글자 크기 확대
+# CSS 강제 주입 (모든 요소에 서울남산체 및 크기 적용)
 st.markdown("""
     <style>
+    @import url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff');
+
     @font-face {
         font-family: 'SeoulNamsanM';
         src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff') format('woff');
@@ -17,31 +18,61 @@ st.markdown("""
         font-style: normal;
     }
     
-    html, body, [class*="css"] {
+    /* Streamlit의 모든 기본 폰트를 강제로 덮어쓰기 */
+    * {
         font-family: 'SeoulNamsanM', sans-serif !important;
-        font-size: 18px !important; /* 기본 글자 크기 확대 */
     }
     
-    h1 { font-size: 40px !important; font-weight: bold !important; }
-    h2 { font-size: 32px !important; font-weight: bold !important; }
-    h3 { font-size: 26px !important; font-weight: bold !important; }
-    p, li, span, div { font-size: 18px !important; line-height: 1.6 !important; }
+    html, body, [class*="css"], [class*="st-"], p, span, div, li, a {
+        font-size: 20px !important; /* 전체 기본 글자 크기 20px로 확대 */
+        line-height: 1.8 !important;
+    }
     
-    /* 데이터프레임(표) 글자 크기 확대 */
-    .dataframe { font-size: 18px !important; }
+    h1 { font-size: 42px !important; font-weight: bold !important; }
+    h2 { font-size: 34px !important; font-weight: bold !important; }
+    h3 { font-size: 28px !important; font-weight: bold !important; }
     
-    /* 팁 박스 스타일 */
-    .stAlert { font-size: 18px !important; }
+    /* 커스텀 HTML 표(Table) 스타일링 - 글자 잘림 방지 및 크기 확대 */
+    table.custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background-color: white;
+    }
+    table.custom-table th {
+        background-color: #f0f2f6;
+        color: #31333F;
+        font-size: 22px !important;
+        padding: 15px;
+        text-align: left;
+        border-bottom: 2px solid #d6d8df;
+    }
+    table.custom-table td {
+        font-size: 20px !important;
+        padding: 15px;
+        border-bottom: 1px solid #e6e6e6;
+        vertical-align: top;
+        word-wrap: break-word;
+        white-space: normal;
+    }
     </style>
     """, unsafe_allow_html=True)
 
+# 표를 HTML로 그려주는 헬퍼 함수 (줄바꿈 및 폰트 적용을 위해 사용)
+def render_table(data, col1_name="English", col2_name="Korean"):
+    html = f"<table class='custom-table'><thead><tr><th style='width:50%;'>{col1_name}</th><th style='width:50%;'>{col2_name}</th></tr></thead><tbody>"
+    for row in data:
+        html += f"<tr><td>{row[0]}</td><td>{row[1]}</td></tr>"
+    html += "</tbody></table>"
+    st.markdown(html, unsafe_allow_html=True)
+
 # ==========================================
-# 1. 데이터 세팅 (제공해주신 모든 데이터 100% 반영)
+# 1. 데이터 세팅 (긴 문장 <br> 줄바꿈 처리 완료)
 # ==========================================
 
 # [Part 3 데이터 전체]
 part3_data = [
-    ["It relieves my stress. I’m stressed out these days. So I need it", "그것은 저의 스트레스를 풀어줘요. 저는 요즘 스트레스를 많이 받아요. 그래서 그것이 필요해요"],
+    ["It relieves my stress.<br>I’m stressed out these days. So I need it", "그것은 저의 스트레스를 풀어줘요.<br>저는 요즘 스트레스를 많이 받아요. 그래서 그것이 필요해요"],
     ["It’s cheaper, So I can save money", "그것은 더 저렴해서 저는 돈을 절약할 수 있어요"],
     ["The price is reasonable", "가격이 합리적이에요"],
     ["It’s faster, So I can save money", "그것은 더 빨라서 저는 시간을 절약할 수 있어요"],
@@ -87,13 +118,13 @@ part3_data = [
     ["It causes less misunderstanding", "그것은 오해를 덜 불러일으켜요"]
 ]
 
-# [Part 4 데이터 전체]
+# [Part 4 데이터 전체 - 긴 문장 줄바꿈 적용]
 part4_data = [
     ["The conference will be held on June 20th at Hilton Hotel", "회의가 6월 20일에 힐튼 호텔에서 개최될 예정이에요"],
     ["The meeting will start at 9:00 a.m", "미팅은 오전 9시에 시작할 거예요"],
     ["The seminar will finish at 5:00 p.m", "세미나는 오후 5시에 끝날 거예요"],
-    ["No I’m afraid that you have the wrong information. Actually the registration and coffee session will start at 9:00 am", "아니요 유감스럽지만 잘못 알고 계십니다. 사실은 등록 및 커피타임은 오전 9시에 시작할 거예요"],
-    ["There are two session. First, at 1 pm. There is a workshop on Social Media Marketing by Ray Kingston. Next at 2:30 pm, there is a discussion on Appealing to Sports Fans through Marketing by Kevin Delmont", "두 개의 세션이 있어요. 먼저 오후 1시에는 레이 킹스턴의 “소설 미디어 마케팅”에 관한 워크숍이 있어요. 다음으로 오후 2시 30분에는 “마케팅을 통해 스포츠 팬들에게 어필하기”에 대한 케빈 델몬트의 토론이 있어요"],
+    ["No I’m afraid that you have the wrong information.<br>Actually the registration and coffee session will start at 9:00 am", "아니요 유감스럽지만 잘못 알고 계십니다.<br>사실은 등록 및 커피타임은 오전 9시에 시작할 거예요"],
+    ["There are two session.<br><br>First, at 1 pm. There is a workshop on Social Media Marketing by Ray Kingston.<br><br>Next at 2:30 pm, there is a discussion on Appealing to Sports Fans through Marketing by Kevin Delmont", "두 개의 세션이 있어요.<br><br>먼저 오후 1시에는 레이 킹스턴의 “소셜 미디어 마케팅”에 관한 워크숍이 있어요.<br><br>다음으로 오후 2시 30분에는 “마케팅을 통해 스포츠 팬들에게 어필하기”에 대한 케빈 델몬트의 토론이 있어요"],
     ["You will depart from San Francisco at 10 a.m", "당신은 오전 10시에 샌프란시스코에서 출발할 거예요"],
     ["You will arrive in Los Angeles at 3 p.m", "당신은 오후 3시에 로스엔젤레스에 도착할 거예요"],
     ["You will take Korean Air 105", "당신은 대한항공 105기를 탈 거예요"],
@@ -102,7 +133,7 @@ part4_data = [
     ["You will give a speech/a presentation/a lecture", "당신은 연설/프레젠테이션/강의를 할 거예요"],
     ["There was supposed to be an interview but it has been canceled", "인터뷰가 예정되어 있었으나 취소되었어요"],
     ["There was supposed to be a meeting but it has been postponed", "미팅이 예정되어 있었으나 연기되었어요"],
-    ["There was supposed to be a meeting with Jane White at 2 p.m on Tuesday, but it has been rescheduled to Friday", "화요일 오후 2시에 제인 화이트씨와 미팅이 예정되어 있었으나 금요일로 조정되었어요"],
+    ["There was supposed to be a meeting with Jane White at 2 p.m on Tuesday,<br>but it has been rescheduled to Friday", "화요일 오후 2시에 제인 화이트씨와 미팅이 예정되어 있었으나<br>금요일로 조정되었어요"],
     ["She got a master’s degree in Design from Vancouver Art University in 2020", "그녀는 2020년에 벤쿠버 예술 대학교에서 디자인 전공으로 석사 학위를 취득했어요"],
     ["From 2015 to 2017, she worked at Jasper Fashion Magazine as a director", "2015년부터 2017년까지 그녀는 제스퍼 패션 잡지사에서 이사로 일했어요"],
     ["From 2017 up to now, she has worked at Toronto Fashion Magazine as a chief editor", "2017년부터 지금까지 그녀는 토론토 패션 잡지사에서 편집장으로 일해오고 있어요"],
@@ -111,7 +142,7 @@ part4_data = [
     ["She is certified in Pilates", "그녀는 필라테스 자격증이 있어요"],
     ["He has experience in education", "그는 교육 분야에 경험이 있어요"],
     ["You will interview Jessica Anderson at 9:00 a.m", "당신은 제시카 앤더슨과 오전 9시에 면접을 볼 거예요"],
-    ["There is an interview with John White from Eco Electronics who is applying for the marketing director position.", "마케팅 부장직에 지원하는 에코전자의 존 화이트씨와 면접이 있어요"],
+    ["There is an interview with John White from Eco Electronics<br>who is applying for the marketing director position.", "마케팅 부장직에 지원하는 에코전자의 존 화이트씨와 면접이 있어요"],
     ["She has 5 years of experience", "그녀는 5년의 업무경력이 있어요"],
     ["He is applying for the editor position", "그는 편집자 직책에 지원하고 있어요"],
     ["You have to pay 20 dollars for the oil painting class", "오일 페인팅 수업으로 20달러를 지불하셔야 해요"],
@@ -134,7 +165,7 @@ part4_data = [
     ["The film will be released in December", "그 영화는 12월에 개봉될 예정입니다."]
 ]
 
-# [Part 5 핵심 표현 데이터 전체]
+# [Part 5 핵심 표현 데이터 전체 - 긴 문장 줄바꿈 적용]
 part5_expr_data = [
     ["I agree/disagree with the statement", "저는 이 주장에 찬성합니다 / 반대합니다"],
     ["There are some advantages / disadvantages of [명사]", "[명사]의 장점 / 단점이 몇 가지 있습니다."],
@@ -145,12 +176,12 @@ part5_expr_data = [
     ["Most of all, 주어 + 동사", "무엇보다도 ~ 입니다."],
     ["From my experience, 주어 + 동사", "제 경험에 따르면 ~ 입니다."],
     ["Also, 주어 + 동사", "또한, ~ 입니다."],
-    ["According to a recent news report, the majority of 사람들 in Korea said that 주어 + 동사", "최근 뉴스 보도에 따르면 한국 사람들 대다수가 ~라고 말했습니다."],
+    ["According to a recent news report,<br>the majority of 사람들 in Korea said that 주어 + 동사", "최근 뉴스 보도에 따르면<br>한국 사람들 대다수가 ~라고 말했습니다."],
     ["Therefore, 서론 문장 반복", "그러므로 ~ 입니다."],
     ["They can learn new things", "그들은 새로운 것들을 배울 수 있어요"],
     ["They can meet new people and expand their network", "그들은 새로운 사람들을 만나고 인맥을 넓힐 수 있어요"],
-    ["They can have a lot of new experiences and broaden their perspective", "그들은 많은 새로운 것을 경험하고 그들의 견문을 넓힐 수 있어요"],
-    ["They can’t make good decisions because they are not mature enough", "그들은 올바른 결정을 하지 못하는데 왜냐하면 그들은 아직 충분히 성숙하지 못하기 때문이에요"],
+    ["They can have a lot of new experiences<br>and broaden their perspective", "그들은 많은 새로운 것을 경험하고<br>그들의 견문을 넓힐 수 있어요"],
+    ["They can’t make good decisions<br>because they are not mature enough", "그들은 올바른 결정을 하지 못하는데<br>왜냐하면 그들은 아직 충분히 성숙하지 못하기 때문이에요"],
     ["They will be distracted", "그들은 집중력이 분산될 거예요"],
     ["They can’t focus on their studies/work", "그들은 공부/일에 집중할 수가 없어요"],
     ["They can’t get good grades at school", "그들은 학교에서 좋은 성적을 받을 수 없어요"],
@@ -169,8 +200,8 @@ part5_expr_data = [
     ["It feels more like a family", "그것은 더 가족처럼 느껴져요"],
     ["They can get a lot of useful information / the latest information on the internet", "그들은 인터넷상에서 많은 유용한 정보 / 최신정보를 얻을 수 있어요"],
     ["It’s faster and more convenient", "그것은 더 빠르고 더 편리해요"],
-    ["There is a lot of inaccurate information on the internet, so it’s not reliable", "인터넷에는 많은 부정확한 정보가 있어서 믿을 만하지가 않아요"],
-    ["It is very distracting for students, so students can’t focus on their studies/work", "그것은 학생들의 집중을 분산시켜서 학생들은 공부/일에 집중할 수 없어요"],
+    ["There is a lot of inaccurate information on the internet,<br>so it’s not reliable", "인터넷에는 많은 부정확한 정보가 있어서<br>믿을 만하지가 않아요"],
+    ["It is very distracting for students,<br>so students can’t focus on their studies/work", "그것은 학생들의 집중을 분산시켜서<br>학생들은 공부/일에 집중할 수 없어요"],
     ["I can get responses right away", "저는 즉시 답변을 받을 수 있어요"],
     ["I can understand the speaker’s feeling more accurately", "저는 화자의 감정을 더 정확하게 이해할 수 있어요"],
     ["They can create a friendly (work) atmosphere", "그들은 친근한 업무 분위기를 만들 수 있어요"],
@@ -181,7 +212,7 @@ part5_expr_data = [
     ["They can motivate others", "그들은 다른 사람들을 동기부여 할 수 있어요"],
     ["Everything is always changing and there is a lot of competition", "모든 것이 항상 변화하고 경쟁이 치열해요"],
     ["They face a lot of challenges and difficulties", "그들은 많은 도전과 어려움에 직면해요"],
-    ["He is able to handle a variety of situations due to his confidence", "그는 그의 자신감 덕분에 다양한 상황을 처리할 수 있어요"],
+    ["He is able to handle a variety of situations<br>due to his confidence", "그는 그의 자신감 덕분에<br>다양한 상황을 처리할 수 있어요"],
     ["They have a lot of experience / knowledge", "그들은 많은 경험 / 지식을 가지고 있어요"],
     ["Employees can work more efficiently and productively", "직원들은 더 효율적이고 더 생산적으로 일할 수 있어요"],
     ["Employees can be more satisfied with their jobs", "직원들은 그들의 직업에 더 만족할 수 있어요"],
@@ -190,7 +221,7 @@ part5_expr_data = [
     ["Customers will feel satisfied and remain loyal", "고객들은 만족감을 느낄 것이고 계속 충성할 거예요"],
     ["It will attract more customers", "그것은 더 많은 고객을 유치할 거예요"],
     ["The business will be more successful", "그 사업은 더 성공할 거예요"],
-    ["People frequently use social media, so it will be very effective", "사람들은 소셜미디어를 자주 이용해서 그것은 매우 효과적일 거예요"],
+    ["People frequently use social media,<br>so it will be very effective", "사람들은 소셜미디어를 자주 이용해서<br>그것은 매우 효과적일 거예요"],
     ["It relieves their stress and they can relax", "그것은 그들의 스트레스를 풀어주고 그들은 편히 쉴 수 있어요"],
     ["It is good for their physical / metal health", "그것은 그들의 신체적 / 정신적 건강에 좋아요"],
     ["It is not good for their health", "그것은 그들의 건강에 좋지 않아요"],
@@ -202,7 +233,7 @@ part5_expr_data = [
     ["We will be able to protect the environment", "우리는 환경을 보호할 수 있을 거예요"]
 ]
 
-# [Part 5 15선 모범답안 데이터 전체 (1~15번 100% 반영)]
+# [Part 5 15선 모범답안 데이터 전체]
 part5_qa_data = [
     {
         "no": 1, "title": "AI 프로그램 사용 금지",
@@ -219,7 +250,7 @@ part5_qa_data = [
         "q_ko": "제품을 구매하기 전에 회사의 웹사이트를 방문해서 정보를 얻는 것은 매우 유용합니다.",
         "answers": [
             {"type": "Answer 1 (동의)", "en": "I agree that it is very useful to visit a company's website to get information about a product before I purchase it.\n\nThat's because we can get accurate information about products.\n\nLast week, I went to a convenience store to buy some chocolate. I usually check nutrition information before buying chocolate, but the information on the package was too small to read. So, I visited the company's website to check the detailed nutrition information. As a result, I was able to find accurate information.", "ko": "저는 제품을 구매하기 전에 회사 웹사이트를 방문해 정보를 얻는 것이 매우 유용하다고 생각합니다. 왜냐하면 우리는 제품에 대한 정확한 정보를 얻을 수 있기 때문입니다. 지난주에 저는 초콜릿을 사기 위해 편의점에 갔습니다. 저는 보통 초콜릿을 사기 전에 영양 정보를 확인하는데, 포장에 있는 정보가 너무 작아서 읽기 어려웠습니다. 그래서 자세한 영양 정보를 확인하기 위해 회사 웹사이트를 방문했습니다. 그 결과, 정확한 정보를 찾을 수 있었습니다.", "keys": "get accurate information / to buy some chocolate / before buying chocolate / too small to read / detailed"},
-            {"type": "Answer 2 (반대)", "en": "I disagree that it is very useful to visit a company's website to get information about a product before I purchase it.\n\nThat's because it is difficult to check the disadvantages of a product.\n\nIn my case, I tried to buy a tablet computer online. However, I could find only the advantages of the product on the company's website. So, I visited other websites for customer reviews and I found some disadvantages of it. As a result, I did not purchase the tablet PC and saved money.", "ko": "저는 제품을 구매하기 전에 회사 웹사이트를 방문해 정보를 얻는 것이 매우 유용하다는 주장에 동의하지 않습니다. 왜냐하면 제품의 단점을 찾기 어렵기 때문입니다. 제 경우에는 태블릿을 온라인으로 구매하려고 했습니다. 하지만 회사 웹사이트에서는 제품의 장점만 찾을 수 있었습니다. 그래서 저는 고객 후기를 보기 위해 다른 웹사이트를 방문했고, 그 제품의 단점을 발견했습니다. 그 결과, 저는 태블릿을 구매하지 않았고 돈을 절약할 수 있었습니다.", "keys": "the disadvantages of a product / online / on the company's website / customer reviews / saved money"}
+            {"type": "Answer 2 (반대)", "en": "I disagree that it is very useful to visit a company's website to get information about a product before I purchase it.\n\nThat's because it is difficult to check the disadvantages of a product.\n\nIn my case, I tried to buy a tablet computer online. However, I could find only the advantages of the product on the company's website. So, I visited other websites for customer reviews and I found some disadvantages of it. As a result, I did not purchase the tablet PC and saved money.", "ko": "저는 제품을 구매하기 전에 회사 웹사이트를 방문해 정보를 얻는 것이 매우 유용하다다는 주장에 동의하지 않습니다. 왜냐하면 제품의 단점을 찾기 어렵기 때문입니다. 제 경우에는 태블릿을 온라인으로 구매하려고 했습니다. 하지만 회사 웹사이트에서는 제품의 장점만 찾을 수 있었습니다. 그래서 저는 고객 후기를 보기 위해 다른 웹사이트를 방문했고, 그 제품의 단점을 발견했습니다. 그 결과, 저는 태블릿을 구매하지 않았고 돈을 절약할 수 있었습니다.", "keys": "the disadvantages of a product / online / on the company's website / customer reviews / saved money"}
         ]
     },
     {
@@ -361,18 +392,15 @@ if menu == "📚 학습 자료실 (표현 정리)":
     
     with tab3:
         st.subheader("💡 Part 3 핵심 치트키")
-        df3 = pd.DataFrame(part3_data, columns=["English", "Korean"])
-        st.dataframe(df3, use_container_width=True, hide_index=True)
+        render_table(part3_data)
         
     with tab4:
         st.subheader("💡 Part 4 핵심 치트키")
-        df4 = pd.DataFrame(part4_data, columns=["English", "Korean"])
-        st.dataframe(df4, use_container_width=True, hide_index=True)
+        render_table(part4_data)
         
     with tab5_expr:
         st.subheader("💡 Part 5 의견 제시 만능 표현")
-        df5 = pd.DataFrame(part5_expr_data, columns=["English", "Korean"])
-        st.dataframe(df5, use_container_width=True, hide_index=True)
+        render_table(part5_expr_data)
         
     with tab5_qa:
         st.subheader("🔥 Part 5 실전 예상문제 15선 완벽 분석")
@@ -452,6 +480,7 @@ elif menu == "📝 AI 첨삭 노트":
         st.metric(label="발음/억양 점수", value="High", delta="명확함")
         
         st.markdown("### 📊 AI 점수 산출 로직")
+        
         st.latex(r"Total Score = \left( \frac{P1 + P2 + P3 + P4 + P5}{Total Max} \right) \times 200")
         
     with col2:
